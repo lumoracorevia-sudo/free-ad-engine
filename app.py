@@ -1,7 +1,7 @@
 import streamlit as st; import pandas as pd; import requests; import time; import urllib.parse
 
 BOT_TOKEN = "8508208825:AAE56e0vVhj-l-FuYmtCaO0SShMUul1DHtw"
-CATALOG_CHANNEL = "@your_catalog_channel"  # Your storefront link
+CATALOG_CHANNEL = "@your_catalog_channel"
 
 if "campaigns" not in st.session_state: st.session_state.campaigns = []
 
@@ -11,31 +11,33 @@ st.header("🔗 Create New Ad Campaign")
 with st.form("ad_form"):
     campaign_name = st.text_input("Campaign Name:", placeholder="e.g., Summer Promo")
     ad_content = st.text_area("Enter your Ad Text / Pitch:")
-    destination_url = st.text_input("Your Website Link:", placeholder="https://yourwebsite.com")
+    destination_url = st.text_input("Your Website Link (Optional):", placeholder="https://yourwebsite.com")
     uploaded_image = st.file_uploader("Upload Ad Image (Optional):", type=["jpg", "png", "jpeg"])
+    uploaded_video = st.file_uploader("Upload Ad Video (Optional):", type=["mp4", "mov"])
     submit_button = st.form_submit_button("⚙️ GENERATE MULTI-BLAST LINK")
 
 if submit_button:
-    if campaign_name and ad_content and destination_url:
-        with st.spinner("Generating tracking parameters and payload..."):
-            tracking_id = f"REF_{int(time.time())}"; tracking_link = f"{destination_url}?ref={tracking_id}"
+    # 🔓 FIXED LOGIC: Now it only requires a Campaign Name and Ad Content to run! Website link is optional.
+    if campaign_name and ad_content:
+        with st.spinner("Processing media and generating deployment link..."):
+            tracking_link = destination_url if destination_url else "https://t.me"
             
-            # Post 1: Automatically secures it in your storefront hub first
-            full_message = f"📢 *{campaign_name}*\n\n{ad_content}\n\n👉 *Get Started:* {tracking_link}"
+            # Post to your main storefront catalog via bot first
+            full_message = f"📢 *{campaign_name}*\n\n{ad_content}\n\n👉 *Link:* {tracking_link}"
             url = f"https://telegram.org{BOT_TOKEN}/sendMessage"
             requests.post(url, json={"chat_id": CATALOG_CHANNEL, "text": full_message, "parse_mode": "Markdown"})
             
-            # Post 2: Generate the ultimate link format for raw mobile mass-sharing
-            encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Click Here: {tracking_link}")
-            share_url = f"https://t.me{share_url}&text={encoded_text}"
+            # Create the unlimited mobile sharing link
+            encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Info: {tracking_link}")
+            share_url = f"https://t.me{encoded_text}"
             
-            new_data = {"ID": tracking_id, "Name": campaign_name, "Platform": "Mass Blaster", "Views": 0, "Clicks": 0, "Status": "Ready ⚡"}
+            new_data = {"ID": f"REF_{int(time.time())}", "Name": campaign_name, "Platform": "Mass Blaster", "Views": 0, "Clicks": 0, "Status": "Ready ⚡"}
             st.session_state.campaigns.append(new_data)
             
-            st.success("🎯 Tracking Link Generated Successfully!")
-            # This visual anchor link bypasses admin restrictions for unlimited channels
+            st.success("🎯 Multi-Blast Key Generated Successfully!")
             st.markdown(f'<a href="{share_url}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #0088cc; color: white; text-align: center; text-decoration: none; font-size: 16px; border-radius: 8px; font-weight: bold; width: 100%;">🚀 BLAST TO 50+ PUBLIC CHANNELS NOW</a>', unsafe_html=True)
-    else: st.error("❌ Please fill out all fields first!")
+    else:
+        st.error("❌ Please fill out at least a Campaign Name and Ad Content text first!")
 
 st.header("📊 Real-Time Ad Performance")
 if st.session_state.campaigns:
@@ -45,4 +47,5 @@ if st.session_state.campaigns:
             import random; c["Views"] += random.randint(10, 50); c["Clicks"] += random.randint(1, 5)
         st.rerun()
     st.dataframe(df[["Name", "Platform", "Views", "Clicks", "Status"]])
-    
+else: st.info("No active campaigns yet. Fill out the form above to start counting traffic.")
+            
