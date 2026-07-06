@@ -18,7 +18,7 @@ with st.form("ad_form"):
 
 if submit_button:
     if campaign_name and ad_content:
-        with st.spinner("Processing media and generating deployment link..."):
+        with st.spinner("Processing parameters..."):
             tracking_link = destination_url.strip()
             if tracking_link and not tracking_link.startswith(("http://", "https://")):
                 tracking_link = "https://" + tracking_link
@@ -33,16 +33,19 @@ if submit_button:
                 except:
                     pass
             
-            # Format text safely for the direct Telegram URL share protocol
-            encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Link: {tracking_link}")
+            # Format clean, raw message for manual mobile sharing
+            raw_broadcast_text = f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Link: {tracking_link}"
+            encoded_text = urllib.parse.quote(raw_broadcast_text)
             share_url = f"https://t.me{encoded_text}"
             
             new_data = {"ID": f"REF_{int(time.time())}", "Name": campaign_name, "Platform": "Mass Blaster", "Views": 0, "Clicks": 0, "Status": "Ready ⚡"}
             st.session_state.campaigns.append(new_data)
             
-            st.success("🎯 Multi-Blast Key Generated Successfully!")
-            # 🛡️ FIX: Replaced custom HTML with Streamlit's official mobile link button
-            st.link_button("🚀 BLAST TO 50+ PUBLIC CHANNELS NOW", share_url, use_container_width=True)
+            st.success("🎯 Multi-Blast Text Packaged Successfully!")
+            
+            # 🛡️ POP-UP FIX: Displays the raw message in a copy box so your phone's browser can't block it
+            st.text_area("📋 Tap below to select and copy your formatted ad text:", value=raw_broadcast_text, height=120)
+            st.link_button("🚀 TRY FORCED MOBILE OPEN", share_url, use_container_width=True)
     else:
         st.error("❌ Please fill out at least a Campaign Name and Ad Content text first!")
 
@@ -55,4 +58,4 @@ if st.session_state.campaigns:
         st.rerun()
     st.dataframe(df[["Name", "Platform", "Views", "Clicks", "Status"]])
 else: st.info("No active campaigns yet. Fill out the form above to start counting traffic.")
-            
+    
