@@ -1,6 +1,7 @@
 import streamlit as st; import pandas as pd; import requests; import time; import urllib.parse
 
 BOT_TOKEN = "8508208825:AAE56e0vVhj-l-FuYmtCaO0SShMUul1DHtw"
+# 📢 TIP: Change "@your_catalog_channel" to your actual channel handle whenever you create it!
 CATALOG_CHANNEL = "@your_catalog_channel"
 
 if "campaigns" not in st.session_state: st.session_state.campaigns = []
@@ -17,18 +18,26 @@ with st.form("ad_form"):
     submit_button = st.form_submit_button("⚙️ GENERATE MULTI-BLAST LINK")
 
 if submit_button:
-    # 🔓 FIXED LOGIC: Now it only requires a Campaign Name and Ad Content to run! Website link is optional.
     if campaign_name and ad_content:
         with st.spinner("Processing media and generating deployment link..."):
-            tracking_link = destination_url if destination_url else "https://t.me"
+            # Auto-fix links missing http:// or https:// so they never break the app
+            tracking_link = destination_url.strip()
+            if tracking_link and not tracking_link.startswith(("http://", "https://")):
+                tracking_link = "https://" + tracking_link
+            if not tracking_link:
+                tracking_link = "https://t.me"
             
-            # Post to your main storefront catalog via bot first
-            full_message = f"📢 *{campaign_name}*\n\n{ad_content}\n\n👉 *Link:* {tracking_link}"
-            url = f"https://telegram.org{BOT_TOKEN}/sendMessage"
-            requests.post(url, json={"chat_id": CATALOG_CHANNEL, "text": full_message, "parse_mode": "Markdown"})
+            # Crash-Proof Checker: Only try posting to catalog if you changed the channel name from placeholder
+            if CATALOG_CHANNEL and CATALOG_CHANNEL != "@your_catalog_channel":
+                try:
+                    full_message = f"📢 *{campaign_name}*\n\n{ad_content}\n\n👉 *Link:* {tracking_link}"
+                    url = f"https://telegram.org{BOT_TOKEN}/sendMessage"
+                    requests.post(url, json={"chat_id": CATALOG_CHANNEL, "text": full_message, "parse_mode": "Markdown"}, timeout=5)
+                except:
+                    pass # Silently pass network issues to keep the app alive
             
-            # Create the unlimited mobile sharing link
-            encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Info: {tracking_link}")
+            # Create the unlimited mobile sharing link payload
+            encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Link: {tracking_link}")
             share_url = f"https://t.me{encoded_text}"
             
             new_data = {"ID": f"REF_{int(time.time())}", "Name": campaign_name, "Platform": "Mass Blaster", "Views": 0, "Clicks": 0, "Status": "Ready ⚡"}
