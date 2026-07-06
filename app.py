@@ -1,7 +1,6 @@
 import streamlit as st; import pandas as pd; import requests; import time; import urllib.parse
 
 BOT_TOKEN = "8508208825:AAE56e0vVhj-l-FuYmtCaO0SShMUul1DHtw"
-# 📢 TIP: Change "@your_catalog_channel" to your actual channel handle whenever you create it!
 CATALOG_CHANNEL = "@your_catalog_channel"
 
 if "campaigns" not in st.session_state: st.session_state.campaigns = []
@@ -20,23 +19,21 @@ with st.form("ad_form"):
 if submit_button:
     if campaign_name and ad_content:
         with st.spinner("Processing media and generating deployment link..."):
-            # Auto-fix links missing http:// or https:// so they never break the app
             tracking_link = destination_url.strip()
             if tracking_link and not tracking_link.startswith(("http://", "https://")):
                 tracking_link = "https://" + tracking_link
             if not tracking_link:
                 tracking_link = "https://t.me"
             
-            # Crash-Proof Checker: Only try posting to catalog if you changed the channel name from placeholder
             if CATALOG_CHANNEL and CATALOG_CHANNEL != "@your_catalog_channel":
                 try:
                     full_message = f"📢 *{campaign_name}*\n\n{ad_content}\n\n👉 *Link:* {tracking_link}"
                     url = f"https://telegram.org{BOT_TOKEN}/sendMessage"
                     requests.post(url, json={"chat_id": CATALOG_CHANNEL, "text": full_message, "parse_mode": "Markdown"}, timeout=5)
                 except:
-                    pass # Silently pass network issues to keep the app alive
+                    pass
             
-            # Create the unlimited mobile sharing link payload
+            # Format text safely for the direct Telegram URL share protocol
             encoded_text = urllib.parse.quote(f"📢 {campaign_name}\n\n{ad_content}\n\n👉 Link: {tracking_link}")
             share_url = f"https://t.me{encoded_text}"
             
@@ -44,7 +41,8 @@ if submit_button:
             st.session_state.campaigns.append(new_data)
             
             st.success("🎯 Multi-Blast Key Generated Successfully!")
-            st.markdown(f'<a href="{share_url}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #0088cc; color: white; text-align: center; text-decoration: none; font-size: 16px; border-radius: 8px; font-weight: bold; width: 100%;">🚀 BLAST TO 50+ PUBLIC CHANNELS NOW</a>', unsafe_html=True)
+            # 🛡️ FIX: Replaced custom HTML with Streamlit's official mobile link button
+            st.link_button("🚀 BLAST TO 50+ PUBLIC CHANNELS NOW", share_url, use_container_width=True)
     else:
         st.error("❌ Please fill out at least a Campaign Name and Ad Content text first!")
 
